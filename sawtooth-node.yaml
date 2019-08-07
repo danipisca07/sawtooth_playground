@@ -13,39 +13,39 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-### Warning: use this file only to start multiple nodes in the same docker machine. 
-###          You should use sawtooth-node.yaml to start a new indipendent node
 # Use this file to start a node as a peer in a blockchain that has already been created
-# with the file sawtooth-default-poet-genesis.yaml 
+# with the file sawtooth-default-poet-genesis.yaml. 
+# Specify and environment variable with the address of the seed (the genesis validator for example), 
+# if you don't know how watch example.env file
 
 version: "2.1"
 
 volumes:
-  validator-1:
+  validator:
 
 services:
-  validator-1:
+  validator:
     image: hyperledger/sawtooth-validator:1.1
-    container_name: sawtooth-validator-1
+    container_name: sawtooth-validator
     expose:
       - 4004
       - 5050
       - 8800
     volumes:
-      - validator-1:/validator-1
+      - validator:/validator
     command: |
       bash -c "
         sawadm keygen --force && \
-        cp -a /etc/sawtooth/keys /validator-1/ && \
+        cp -a /etc/sawtooth/keys /validator/ && \
         sawtooth-validator -v \
             --bind network:tcp://eth0:8800 \
             --bind component:tcp://eth0:4004 \
             --bind consensus:tcp://eth0:5050 \
             --peering dynamic \
-            --endpoint tcp://validator-1:8800 \
-            --seeds tcp://validator-0:8800 \
+            --endpoint tcp://validator:8800 \
+            --seeds ${SEEDS} \
             --scheduler serial \
-            --network-auth trust
+            --network-auth trust \
       "
     environment:
       PYTHONPATH: "/project/sawtooth-core/consensus/poet/common:\
@@ -53,60 +53,60 @@ services:
         /project/sawtooth-core/consensus/poet/core"
     stop_signal: SIGKILL
 
-  rest-api-1:
+  rest-api:
     image: hyperledger/sawtooth-rest-api:1.1
-    container_name: sawtooth-rest-api-1
+    container_name: sawtooth-rest-api
     expose:
       - 8008
     command: |
       bash -c "
         sawtooth-rest-api \
-          --connect tcp://validator-1:4004 \
-          --bind rest-api-1:8008
+          --connect tcp://validator:4004 \
+          --bind rest-api:8008
       "
     stop_signal: SIGKILL
 
-  intkey-tp-1:
+  intkey-tp:
     image: hyperledger/sawtooth-intkey-tp-python:1.1
-    container_name: sawtooth-intkey-tp-python-1
+    container_name: sawtooth-intkey-tp-python
     expose:
       - 4004
-    command: intkey-tp-python -C tcp://validator-1:4004
+    command: intkey-tp-python -C tcp://validator:4004
     stop_signal: SIGKILL
 
-  xo-tp-1:
+  xo-tp:
     image: hyperledger/sawtooth-xo-tp-python:1.1
-    container_name: sawtooth-xo-tp-python-1
+    container_name: sawtooth-xo-tp-python
     expose:
       - 4004
-    command: xo-tp-python -vv -C tcp://validator-1:4004
+    command: xo-tp-python -vv -C tcp://validator:4004
     stop_signal: SIGKILL
 
-  settings-tp-1:
+  settings-tp:
     image: hyperledger/sawtooth-settings-tp:1.1
-    container_name: sawtooth-settings-tp-1
+    container_name: sawtooth-settings-tp
     expose:
       - 4004
-    command: settings-tp -C tcp://validator-1:4004
+    command: settings-tp -C tcp://validator:4004
     stop_signal: SIGKILL
 
-  poet-engine-1:
+  poet-engine:
     image: hyperledger/sawtooth-poet-engine:1.1
-    container_name: sawtooth-poet-engine-1
+    container_name: sawtooth-poet-engine
     volumes:
-      - validator-1:/validator-1
+      - validator:/validator
     command: "bash -c \"\
-        while [ ! -f /validator-1/keys/validator.priv ]; do sleep 1; done && \
-        cp -a /validator-1/keys /etc/sawtooth && \
-        poet-engine -C tcp://validator-1:5050 --component tcp://validator-1:4004 \
+        while [ ! -f /validator/keys/validator.priv ]; do sleep 1; done && \
+        cp -a /validator/keys /etc/sawtooth && \
+        poet-engine -C tcp://validator:5050 --component tcp://validator:4004 \
     \""
 
-  poet-validator-registry-tp-1:
+  poet-validator-registry-tp:
     image: hyperledger/sawtooth-poet-validator-registry-tp:1.1
-    container_name: sawtooth-poet-validator-registry-tp-1
+    container_name: sawtooth-poet-validator-registry-tp
     expose:
       - 4004
-    command: poet-validator-registry-tp -C tcp://validator-1:4004
+    command: poet-validator-registry-tp -C tcp://validator:4004
     environment:
       PYTHONPATH: /project/sawtooth-core/consensus/poet/common
     stop_signal: SIGKILL
