@@ -19,7 +19,7 @@
 version: "2.1"
 
 volumes:
-  poet-shared:
+  validator-1:
 
 services:
   validator-1:
@@ -30,12 +30,11 @@ services:
       - 5050
       - 8800
     volumes:
-      - poet-shared:/poet-shared
+      - validator-1:/validator-1
     command: |
       bash -c "
         sawadm keygen --force && \
-        mkdir -p /poet-shared/validator-1 || true && \
-        cp -a /etc/sawtooth/keys /poet-shared/validator-1/ && \
+        cp -a /etc/sawtooth/keys /validator-1/ && \
         sawtooth-validator -v \
             --bind network:tcp://eth0:8800 \
             --bind component:tcp://eth0:4004 \
@@ -93,10 +92,10 @@ services:
     image: hyperledger/sawtooth-poet-engine:1.1
     container_name: sawtooth-poet-engine-1
     volumes:
-      - poet-shared:/poet-shared
+      - validator-1:/validator-1
     command: "bash -c \"\
-        while [ ! -f /poet-shared/validator-1/keys/validator.priv ]; do sleep 1; done && \
-        cp -a /poet-shared/validator-1/keys /etc/sawtooth && \
+        while [ ! -f /validator-1/keys/validator.priv ]; do sleep 1; done && \
+        cp -a /validator-1/keys /etc/sawtooth && \
         poet-engine -C tcp://validator-1:5050 --component tcp://validator-1:4004 \
     \""
 

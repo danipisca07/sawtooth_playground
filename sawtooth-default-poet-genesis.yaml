@@ -31,6 +31,7 @@ version: "2.1"
 
 volumes:
   poet-shared:
+  validator-0:
 
 services:
   shell:
@@ -38,7 +39,9 @@ services:
     container_name: sawtooth-shell
     entrypoint: "bash -c \"\
         sawtooth keygen && \
-        tail -f /dev/null \
+        tail -f /dev/null && \
+        apt update -y && \
+        apt install curl -y \
         \""
 
   validator-0:
@@ -47,13 +50,14 @@ services:
     expose:
       - 4004
       - 5050
+      - 8000
       - 8800
     volumes:
       - poet-shared:/poet-shared
+      - validator-0:/validator-0
     command: "bash -c \"\
         sawadm keygen --force && \
-        mkdir -p /poet-shared/validator-0 || true && \
-        cp -a /etc/sawtooth/keys /poet-shared/validator-0/ && \
+        cp -a /etc/sawtooth/keys /validator-0/ && \
         while [ ! -f /poet-shared/poet-enclave-measurement ]; do sleep 1; done && \
         while [ ! -f /poet-shared/poet-enclave-basename ]; do sleep 1; done && \
         while [ ! -f /poet-shared/poet.batch ]; do sleep 1; done && \
@@ -84,7 +88,7 @@ services:
           --peering dynamic \
           --endpoint tcp://validator-0:8800 \
           --scheduler serial \
-          --network-auth trust
+          --network-auth trust \
     \""
     environment:
       PYTHONPATH: "/project/sawtooth-core/consensus/poet/common:\
@@ -134,6 +138,7 @@ services:
     container_name: sawtooth-poet-engine-0
     volumes:
       - poet-shared:/poet-shared
+      - validator-0:/validator-0
     command: "bash -c \"\
         if [ ! -f /poet-shared/poet-enclave-measurement ]; then \
             poet enclave measurement >> /poet-shared/poet-enclave-measurement; \
@@ -144,8 +149,8 @@ services:
         if [ ! -f /poet-shared/simulator_rk_pub.pem ]; then \
             cp /etc/sawtooth/simulator_rk_pub.pem /poet-shared; \
         fi && \
-        while [ ! -f /poet-shared/validator-0/keys/validator.priv ]; do sleep 1; done && \
-        cp -a /poet-shared/validator-0/keys /etc/sawtooth && \
+        while [ ! -f /validator-0/keys/validator.priv ]; do sleep 1; done && \
+        cp -a /validator-0/keys /etc/sawtooth && \
         poet registration create -k /etc/sawtooth/keys/validator.priv -o /poet-shared/poet.batch && \
         poet-engine -C tcp://validator-0:5050 --component tcp://validator-0:4004 \
     \""
