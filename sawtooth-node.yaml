@@ -24,6 +24,17 @@ volumes:
   validator:
 
 services:
+    
+  shell:
+    image: hyperledger/sawtooth-all:1.1
+    container_name: sawtooth-shell
+    entrypoint: "bash -c \"\
+        sawtooth keygen && \
+        tail -f /dev/null && \
+        apt update -y && \
+        apt install curl -y \
+        \""
+
   validator:
     image: hyperledger/sawtooth-validator:1.1
     container_name: sawtooth-validator
