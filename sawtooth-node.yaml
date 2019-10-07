@@ -131,6 +131,6 @@ services:
       PYTHONPATH: /project/sawtooth-core/consensus/poet/common
     stop_signal: SIGKILL
     
-network:
+networks:
     host:
     
