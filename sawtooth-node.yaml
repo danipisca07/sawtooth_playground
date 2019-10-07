@@ -30,7 +30,10 @@ services:
     expose:
       - 4004
       - 5050
+      - 8000
       - 8800
+    ports:
+      - "8800:8800"
     volumes:
       - validator:/validator
     command: |
@@ -38,11 +41,11 @@ services:
         sawadm keygen --force && \
         cp -a /etc/sawtooth/keys /validator/ && \
         sawtooth-validator -v \
-            --bind network:tcp://eth0:8800 \
-            --bind component:tcp://eth0:4004 \
-            --bind consensus:tcp://eth0:5050 \
+            --bind network:tcp://eth0:8801 \
+            --bind component:tcp://eth0:4005 \
+            --bind consensus:tcp://eth0:5051 \
             --peering dynamic \
-            --endpoint tcp://validator:8800 \
+            --endpoint tcp://validator:8801 \
             --seeds ${SEEDS} \
             --scheduler serial \
             --network-auth trust \
@@ -58,11 +61,13 @@ services:
     container_name: sawtooth-rest-api
     expose:
       - 8008
+    ports:
+      - "8008:8008"
     command: |
       bash -c "
         sawtooth-rest-api \
-          --connect tcp://validator:4004 \
-          --bind rest-api:8008
+          --connect tcp://validator:4005 \
+          --bind rest-api:8001
       "
     stop_signal: SIGKILL
 
@@ -71,7 +76,8 @@ services:
     container_name: sawtooth-intkey-tp-python
     expose:
       - 4004
-    command: intkey-tp-python -C tcp://validator:4004
+      - 4005
+    command: intkey-tp-python -C tcp://validator:4005
     stop_signal: SIGKILL
 
   xo-tp:
@@ -79,7 +85,8 @@ services:
     container_name: sawtooth-xo-tp-python
     expose:
       - 4004
-    command: xo-tp-python -vv -C tcp://validator:4004
+      - 4005
+    command: xo-tp-python -vv -C tcp://validator:4005
     stop_signal: SIGKILL
 
   settings-tp:
@@ -87,7 +94,8 @@ services:
     container_name: sawtooth-settings-tp
     expose:
       - 4004
-    command: settings-tp -C tcp://validator:4004
+      - 4005
+    command: settings-tp -C tcp://validator:4005
     stop_signal: SIGKILL
 
   poet-engine:
@@ -106,8 +114,12 @@ services:
     container_name: sawtooth-poet-validator-registry-tp
     expose:
       - 4004
-    command: poet-validator-registry-tp -C tcp://validator:4004
+      - 4005
+    command: poet-validator-registry-tp -C tcp://validator:4005
     environment:
       PYTHONPATH: /project/sawtooth-core/consensus/poet/common
     stop_signal: SIGKILL
+    
+network:
+    host:
     

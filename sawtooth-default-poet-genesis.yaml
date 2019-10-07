@@ -52,6 +52,8 @@ services:
       - 5050
       - 8000
       - 8800
+    ports:
+      - "8800:8800"
     volumes:
       - poet-shared:/poet-shared
       - validator-0:/validator-0
@@ -101,6 +103,8 @@ services:
     container_name: sawtooth-rest-api-0
     expose:
       - 8008
+    ports:
+      - "8008:8008"
     command: |
       bash -c "
         sawtooth-rest-api \
@@ -164,3 +168,6 @@ services:
     environment:
       PYTHONPATH: /project/sawtooth-core/consensus/poet/common
     stop_signal: SIGKILL
+
+network:
+    host:
